@@ -288,7 +288,7 @@ body{margin:0}
       <div class="cell"><input id="dFee" class="amt" inputmode="decimal" data-f="fee" autocomplete="off"></div>
       <span id="dSt"></span>
     </div>
-    <p class="hint">Ay ücreti boş bırakılırsa aylık ücret kullanılır. O ay farklıysa üzerine yazın (ücret yoksa 0).</p>
+    <p class="hint">Aylık ücreti yazınca 12 ayın hepsine yazılır. Bir ayın ücreti farklıysa sadece o ayı değiştirin (ücret yoksa 0). Aylık ücreti sonradan değiştirirseniz, ödemesi girilmemiş ve elle değiştirilmemiş aylar yeni ücrete geçer.</p>
     <table class="months"><thead><tr><th>Ay</th><th>Ücret</th><th>Alınan</th><th>Kalan</th><th></th></tr></thead><tbody id="dBody"></tbody></table>
   </div>
   <div class="dr-foot">
@@ -816,6 +816,15 @@ document.addEventListener('focusout',e=>{
   const el=e.target;if(!el.classList||!el.classList.contains('amt'))return;
   if(S.rendering)return;commitInput(el);
 });
+function feePatch(c,nv){
+  const old=feeOf(c),months={};
+  for(let m=0;m<12;m++){
+    const u=uOv(c,m),paid=aOf(c,m)!=null;
+    if(u==null)months[m]={u:paid&&old!=null?old:nv};
+    else if(u===old&&!paid)months[m]={u:nv};
+  }
+  return {fee:nv,months};
+}
 function commitInput(el){
   if(el.dataset.raw!=='1')return;delete el.dataset.raw;
   const c=S.clients.get(el.dataset.id);if(!c)return;
@@ -827,7 +836,7 @@ function commitInput(el){
   const nv=v==null?null:r2(v);
   el.value=plain(nv);
   if(nv===old)return;
-  if(f==='fee')addOp({t:'patch',id:c.id,p:{fee:nv}});
+  if(f==='fee')addOp({t:'patch',id:c.id,p:feePatch(c,nv)});
   else addOp({t:'patch',id:c.id,p:{months:{[m]:{[f]:nv}}}});
 }
 document.addEventListener('keydown',e=>{
@@ -884,7 +893,8 @@ $('addBtn').onclick=()=>{
       if(Number.isNaN(fee)||(fee!=null&&fee<0)){err.textContent='Aylık ücret geçerli bir tutar olmalı (örnek: 2.500).';err.hidden=false;return}
       if(S.list.some(c=>norm(c.name)===norm(name))){err.textContent='Bu isimde bir mükellef zaten var.';err.hidden=false;return}
       const id=newId();
-      addOp({t:'add',c:{id,name,fee:fee==null?null:r2(fee),months:{}}});
+      const months={};if(fee!=null)for(let m=0;m<12;m++)months[m]={u:r2(fee)};
+      addOp({t:'add',c:{id,name,fee:fee==null?null:r2(fee),months}});
       closeModal();toast(`${name} eklendi.`);
       S.q='';$('q').value='';S.st='all';$('fSt').value='all';setView('list');
       setTimeout(()=>{const b=document.querySelector(`[data-open="${CSS.escape(id)}"]`);if(b){b.scrollIntoView({block:'center'});b.focus()}},120);
