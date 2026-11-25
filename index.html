@@ -288,7 +288,7 @@ body{margin:0}
       <div class="cell"><input id="dFee" class="amt" inputmode="decimal" data-f="fee" autocomplete="off"></div>
       <span id="dSt"></span>
     </div>
-    <p class="hint">Aylık ücreti yazınca 12 ayın hepsine yazılır. Bir ayın ücreti farklıysa sadece o ayı değiştirin (ücret yoksa 0). Aylık ücreti sonradan değiştirirseniz, ödemesi girilmemiş ve elle değiştirilmemiş aylar yeni ücrete geçer.</p>
+    <p class="hint">Aylık ücreti yazınca 12 ayın hepsine yazılır. Bir ayın ücreti farklıysa sadece o ayı değiştirin; bir ayı silerseniz o ayın ücreti 0 olur. Aylık ücreti sonradan değiştirirseniz, ödemesi girilmemiş ve elle değiştirilmemiş aylar yeni ücrete geçer.</p>
     <table class="months"><thead><tr><th>Ay</th><th>Ücret</th><th>Alınan</th><th>Kalan</th><th></th></tr></thead><tbody id="dBody"></tbody></table>
   </div>
   <div class="dr-foot">
@@ -833,7 +833,7 @@ function commitInput(el){
   const old=f==='fee'?feeOf(c):f==='u'?uOv(c,m):aOf(c,m);
   if(Number.isNaN(v)){toast('Geçerli bir tutar girin (örnek: 1.250,50).');el.value=plain(old);return}
   if(v!=null&&v<0){toast('Tutar 0 veya daha büyük olmalı.');el.value=plain(old);return}
-  const nv=v==null?null:r2(v);
+  const nv=v==null?(f==='u'?0:null):r2(v);
   el.value=plain(nv);
   if(nv===old)return;
   if(f==='fee')addOp({t:'patch',id:c.id,p:feePatch(c,nv)});
