@@ -200,13 +200,15 @@ body{margin:0}
 .field input[type=file]{height:auto;padding:8px 10px}
 .linkbtn{background:none;border:0;padding:0;color:var(--focus);text-decoration:underline;cursor:pointer;justify-self:center;font-size:13px}
 .steps{margin:0;padding-left:20px;display:grid;gap:6px}
+.lock-card .lock-sub{margin-top:-8px;font-weight:600;color:var(--muted)}
 </style>
 </head>
 <body>
 <div id="lock" class="lock">
   <div class="lock-card">
     <div class="lock-mark" aria-hidden="true">₺</div>
-    <h1>2027 Muhasebe Ücret Takip</h1>
+    <h1>Sabri Gökçe Muhasebe</h1>
+    <p class="lock-sub">2027 Ücret Takip</p>
     <p id="lockMsg" class="muted">Yükleniyor…</p>
 
     <form id="loginForm" class="stack" autocomplete="on" novalidate hidden>
@@ -918,56 +920,27 @@ $('addBtn').onclick=()=>{
 function colL(n){let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s}
 const MFMT='#,##0.00 "₺";[Red]-#,##0.00 "₺";"-"',PFMT='0.0%;-0.0%;"-"';
 function buildWorkbook(){
-  const list=S.list,n=list.length,first=5,last=first+n-1,totRow=first+n;
-  const ws={};const set=(a,c)=>{ws[a]=c};
-  set('A1',{t:'s',v:`${YEAR} YILI MUHASEBE ÜCRETLERİ TAKİP LİSTESİ`});
-  set('A2',{t:'s',v:"NASIL KULLANILIR:  Sarı hücreler (Aylık Ücret ve her ayın 'Alınan' sütunu) elle girilir. Ay 'Ücret' sütunları otomatik olarak Aylık Ücret'i alır; o ay farklı ücret/zam ya da ücret yoksa üzerine yazabilirsiniz (ör. 0). Kalan ve toplamlar formülle hesaplanır."});
-  set('A3',{t:'s',v:'SIRA'});set('B3',{t:'s',v:'MÜKELLEF'});set('C3',{t:'s',v:'AYLIK ÜCRET'});
-  const merges=[{s:{r:0,c:0},e:{r:0,c:42}},{s:{r:1,c:0},e:{r:1,c:42}},{s:{r:2,c:0},e:{r:3,c:0}},{s:{r:2,c:1},e:{r:3,c:1}},{s:{r:2,c:2},e:{r:3,c:2}}];
-  for(let m=0;m<12;m++){const c0=3+3*m;set(colL(c0)+'3',{t:'s',v:MONTHS_UP[m]});merges.push({s:{r:2,c:c0},e:{r:2,c:c0+2}});
-    set(colL(c0)+'4',{t:'s',v:'Ücret'});set(colL(c0+1)+'4',{t:'s',v:'Alınan'});set(colL(c0+2)+'4',{t:'s',v:'Kalan'})}
-  [['AN','YILLIK ÜCRET'],['AO','TOPLAM ALINAN'],['AP','TOPLAM KALAN'],['AQ','DURUM']].forEach(([c,v],i)=>{set(c+'3',{t:'s',v});merges.push({s:{r:2,c:39+i},e:{r:3,c:39+i}})});
-  list.forEach((c,i)=>{
-    const R=first+i,r=calc(c);
-    set('A'+R,{t:'n',v:i+1});set('B'+R,{t:'s',v:c.name});
-    if(feeOf(c)!=null)set('C'+R,{t:'n',v:feeOf(c),z:MFMT});
-    for(let m=0;m<12;m++){
-      const cu=colL(3+3*m),ca=colL(4+3*m),ck=colL(5+3*m),p=r.per[m],ov=uOv(c,m);
-      set(cu+R,ov!=null?{t:'n',v:ov,z:MFMT}:{t:'n',f:`$C${R}`,v:p.u,z:MFMT});
-      if(aOf(c,m)!=null)set(ca+R,{t:'n',v:aOf(c,m),z:MFMT});
-      set(ck+R,{t:'n',f:`${cu}${R}-${ca}${R}`,v:p.k,z:MFMT});
-    }
-    const us=[],as=[];for(let m=0;m<12;m++){us.push(colL(3+3*m)+R);as.push(colL(4+3*m)+R)}
-    set('AN'+R,{t:'n',f:us.join('+'),v:r.y,z:MFMT});set('AO'+R,{t:'n',f:as.join('+'),v:r.a,z:MFMT});
-    set('AP'+R,{t:'n',f:`AN${R}-AO${R}`,v:r.k,z:MFMT});
-    set('AQ'+R,{t:'s',f:`IF(AN${R}=0,"Ücret yok",IF(AP${R}<=0,"Ödendi","Borçlu"))`,v:ST_LABEL[r.st]});
-  });
-  const t=totals(list);
-  set('B'+totRow,{t:'s',v:'GENEL TOPLAM'});
-  const sumAt=(col,v)=>set(col+totRow,{t:'n',f:`SUM(${col}${first}:${col}${Math.max(last,first)})`,v,z:MFMT});
-  sumAt('C',t.fee);
-  for(let m=0;m<12;m++){const p=t.per[m];sumAt(colL(3+3*m),p.u);sumAt(colL(4+3*m),p.a);sumAt(colL(5+3*m),p.k)}
-  sumAt('AN',t.y);sumAt('AO',t.a);sumAt('AP',t.k);
-  ws['!ref']=`A1:AQ${totRow}`;ws['!merges']=merges;
-  ws['!cols']=[{wch:6},{wch:40},{wch:14}].concat(Array.from({length:36},()=>({wch:12}))).concat([{wch:14},{wch:14},{wch:14},{wch:12}]);
-  const s2={};const sn="'"+`${YEAR} Takip`+"'";
-  s2.A1={t:'s',v:`${YEAR} AYLIK TAHSİLAT ÖZETİ`};
-  s2.A3={t:'s',v:'AY'};s2.B3={t:'s',v:'TAHAKKUK EDEN ÜCRET'};s2.C3={t:'s',v:'TAHSİL EDİLEN'};s2.D3={t:'s',v:'KALAN'};s2.E3={t:'s',v:'TAHSİLAT ORANI'};
-  for(let m=0;m<12;m++){const R=4+m,p=t.per[m];
-    s2['A'+R]={t:'s',v:MONTHS_UP[m]};
-    s2['B'+R]={t:'n',f:`${sn}!${colL(3+3*m)}${totRow}`,v:p.u,z:MFMT};
-    s2['C'+R]={t:'n',f:`${sn}!${colL(4+3*m)}${totRow}`,v:p.a,z:MFMT};
-    s2['D'+R]={t:'n',f:`B${R}-C${R}`,v:p.k,z:MFMT};
-    s2['E'+R]={t:'n',f:`IF(B${R}=0,0,C${R}/B${R})`,v:p.u?p.a/p.u:0,z:PFMT};
-  }
-  s2.A16={t:'s',v:'YIL TOPLAMI'};s2.B16={t:'n',f:'SUM(B4:B15)',v:t.y,z:MFMT};s2.C16={t:'n',f:'SUM(C4:C15)',v:t.a,z:MFMT};s2.D16={t:'n',f:'SUM(D4:D15)',v:t.k,z:MFMT};s2.E16={t:'n',f:'IF(B16=0,0,C16/B16)',v:t.y?t.a/t.y:0,z:PFMT};
-  s2.A18={t:'s',v:'Mükellef sayısı'};s2.B18={t:'n',f:`COUNTA(${sn}!B${first}:B${Math.max(last,first)})`,v:n};
-  s2.A19={t:'s',v:'Borçlu mükellef'};s2.B19={t:'n',f:`COUNTIF(${sn}!AQ${first}:AQ${Math.max(last,first)},"Borçlu")`,v:t.due};
-  s2.A20={t:'s',v:'Tamamı ödenen'};s2.B20={t:'n',f:`COUNTIF(${sn}!AQ${first}:AQ${Math.max(last,first)},"Ödendi")`,v:t.paid};
-  s2.A22={t:'s',v:`Not: Bu sayfadaki tüm değerler '${YEAR} Takip' sayfasından otomatik gelir; burada elle giriş yapmayın.`};
-  s2['!ref']='A1:E22';s2['!merges']=[{s:{r:0,c:0},e:{r:0,c:4}}];s2['!cols']=[{wch:18},{wch:22},{wch:22},{wch:22},{wch:16}];
+  const list=S.list,MF='#,##0.00 "₺";-#,##0.00 "₺";"-"';
+  const head=['SIRA','MÜKELLEF','AYLIK ÜCRET'];
+  for(let m=0;m<12;m++)head.push(MONTHS_UP[m]+' ÜCRET',MONTHS_UP[m]+' ALINAN',MONTHS_UP[m]+' KALAN');
+  head.push('YILLIK ÜCRET','TOPLAM ALINAN','TOPLAM KALAN','DURUM');
+  const rows=[head];
+  list.forEach((c,i)=>{const r=calc(c);const row=[i+1,c.name,feeOf(c)];r.per.forEach((p,m)=>row.push(p.u,aOf(c,m),p.k));row.push(r.y,r.a,r.k,ST_LABEL[r.st]);rows.push(row)});
+  const t=totals(list);const tot=['','GENEL TOPLAM',r2(t.fee)];t.per.forEach(p=>tot.push(r2(p.u),r2(p.a),r2(p.k)));tot.push(r2(t.y),r2(t.a),r2(t.k),'');rows.push(tot);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const rg=XLSX.utils.decode_range(ws['!ref']);
+  for(let R=1;R<=rg.e.r;R++)for(let C=2;C<=rg.e.c;C++){const cell=ws[XLSX.utils.encode_cell({r:R,c:C})];if(cell&&cell.t==='n')cell.z=MF}
+  ws['!cols']=[{wch:6},{wch:38},{wch:14}].concat(Array.from({length:36},()=>({wch:15}))).concat([{wch:15},{wch:15},{wch:15},{wch:11}]);
+  ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(1,rows.length-2),c:head.length-1}})};
+  const sum=[['AY','TAHAKKUK EDEN','TAHSİL EDİLEN','KALAN','TAHSİLAT ORANI']];
+  t.per.forEach((p,i)=>sum.push([MONTHS_UP[i],r2(p.u),r2(p.a),r2(p.k),p.u?p.a/p.u:0]));
+  sum.push(['YIL TOPLAMI',r2(t.y),r2(t.a),r2(t.k),t.y?t.a/t.y:0]);
+  sum.push([]);sum.push(['Mükellef sayısı',list.length]);sum.push(['Borçlu',t.due]);sum.push(['Tamamı ödenen',t.paid]);
+  const s2=XLSX.utils.aoa_to_sheet(sum);
+  for(let R=1;R<=13;R++){for(let C=1;C<=3;C++){const c=s2[XLSX.utils.encode_cell({r:R,c:C})];if(c)c.z=MF}const p=s2[XLSX.utils.encode_cell({r:R,c:4})];if(p)p.z='0.0%'}
+  s2['!cols']=[{wch:18},{wch:18},{wch:18},{wch:18},{wch:16}];
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,`${YEAR} Takip`);XLSX.utils.book_append_sheet(wb,s2,'Aylık Özet');
+  XLSX.utils.book_append_sheet(wb,ws,'Takip');XLSX.utils.book_append_sheet(wb,s2,'Aylık Özet');
   return wb;
 }
 $('dlBtn').onclick=()=>{
@@ -982,14 +955,15 @@ function parseTemplate(wb){
     for(let r=rg.s.r;r<=Math.min(rg.e.r,30);r++){const c=ws[XLSX.utils.encode_cell({r,c:1})];if(c&&norm(c.v)==='mukellef'){hdr=r;break}}
     if(hdr<0)continue;
     const out=[];
-    for(let r=hdr+2;r<=rg.e.r;r++){
+    const sub=ws[XLSX.utils.encode_cell({r:hdr+1,c:3})];const start=sub&&norm(sub.v)==='ucret'?hdr+2:hdr+1;
+    for(let r=start;r<=rg.e.r;r++){
       const nc=ws[XLSX.utils.encode_cell({r,c:1})];const name=nc?String(nc.v).replace(/\s+/g,' ').trim():'';
       if(!name)continue;if(norm(name).includes('genel toplam'))break;
       const num=c=>{const x=ws[XLSX.utils.encode_cell({r,c})];if(!x)return {v:null,f:false};const v=typeof x.v==='number'?x.v:parseAmt(x.v);return {v:Number.isFinite(v)?r2(v):null,f:!!x.f}};
       const feeCell=num(2);const fee=feeCell.f?null:feeCell.v;const months={};
       for(let m=0;m<12;m++){const u=num(3+3*m),a=num(4+3*m);const o={};
         if(!u.f&&u.v!=null&&u.v!==fee)o.u=u.v;
-        if(!a.f&&a.v!=null)o.a=a.v;
+        if(!a.f&&a.v!=null&&a.v!==0)o.a=a.v;
         if(Object.keys(o).length)months[m]=o}
       out.push({name:name.toLocaleUpperCase('tr'),fee,months});
     }
