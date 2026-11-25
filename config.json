@@ -1,0 +1,13 @@
+{
+ "v": 1,
+ "owner": "omerexe34",
+ "repo": "muhasebe",
+ "branch": "main",
+ "salt": "VU3orXS2gOBGTT/VSARjKg==",
+ "iter": 600000,
+ "wrap": {
+  "iv": "VX0Z3c/WhDWVzkSU",
+  "ct": "d9/rJzO4IL+cfQbgbzrka13NQm5r7uiD/cayZFzDERRNrfmSZVkmSr2arGpIUyI4/GDbZkOg0KBEOGBL5NX8NZ56ZX3HAc7/9djHTH6GdBBj6HnRGXVgxCRv7BjfMj1gRVgygN3ibOWbai4us9GPzoVsKJB8yLSdl2M8yokeSoyXdiNe/5eQY5YcZq3xIdqw/FRVxYgr8B91xX9RZ1P7lgeWX0tz9XJB4LKwyEQM15+p23exwturWvxsBGFLogAxn7zDg6A="
+ },
+ "updatedAt": 1795608391727
+}
